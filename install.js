@@ -1,6 +1,10 @@
 // Wheel sources — all from AMD's official repo.radeon.com
 // Windows: https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/
 // Linux:   https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/
+//
+// ROCm wheels are installed LAST to prevent pip's dependency resolver
+// from overwriting them with CPU versions when installing other packages.
+// See: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/install-pytorch.html
 
 const ROCM_BASE_WIN   = "https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1"
 const ROCM_BASE_LINUX = "https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1"
@@ -18,9 +22,9 @@ const ROCM_WHEELS_LINUX = [
   `${ROCM_BASE_LINUX}/triton-3.5.1+rocm7.2.1.gita272dfa8-cp312-cp312-linux_x86_64.whl`,
 ].join(" ")
 
-const CUDA_WHEELS   = "--index-url https://download.pytorch.org/whl/cu124 torch torchaudio torchvision"
-const CPU_WHEELS    = "--index-url https://download.pytorch.org/whl/cpu torch torchaudio torchvision"
-const COMMON_DEPS   = "transformers==4.57.3 accelerate==1.12.0 gradio librosa soundfile einops onnxruntime sox"
+const CUDA_WHEELS = "--index-url https://download.pytorch.org/whl/cu124 torch torchaudio torchvision"
+const CPU_WHEELS  = "--index-url https://download.pytorch.org/whl/cpu torch torchaudio torchvision"
+const COMMON_DEPS = "transformers==4.57.3 accelerate==1.12.0 gradio librosa soundfile einops onnxruntime sox"
 
 module.exports = {
   run: [
@@ -50,7 +54,18 @@ module.exports = {
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 4. Detect GPU and write result to gpu_type.txt
+    // 4. Install Qwen3-TTS package and common deps first
+    //    (may pull in CPU torch/torchaudio — overwritten in step 7)
+    {
+      method: "shell.run",
+      params: {
+        message: `pip install -e . --no-deps && pip install ${COMMON_DEPS}`,
+        path: "app",
+        venv: "env"
+      }
+    },
+
+    // 5. Detect GPU and write result to gpu_type.txt
     {
       method: "shell.run",
       params: {
@@ -60,13 +75,13 @@ module.exports = {
       }
     },
 
-    // 5. Read GPU type
+    // 6. Read GPU type
     {
       method: "fs.read",
       params: { path: "app/gpu_type.txt" }
     },
 
-    // 6a. Block RDNA2 on Windows — not supported, fail early with clear message
+    // 7a. Block RDNA2 on Windows — not supported, fail early with clear message
     {
       when: "{{input.data.trim() === 'amd_rdna2_dgpu' && platform === 'win32'}}",
       method: "shell.run",
@@ -77,7 +92,7 @@ module.exports = {
       }
     },
 
-    // 6b. Install correct PyTorch wheels based on GPU + platform
+    // 7b. Install correct PyTorch wheels LAST — always wins over anything installed above
     {
       method: "shell.run",
       params: {
@@ -88,7 +103,6 @@ module.exports = {
               ? 'pip install --no-cache-dir ${ROCM_WHEELS_WIN}'
               : 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
           } else if (gpu === 'amd_rdna2_dgpu') {
-            // Linux only — same manylinux wheels, gfx103x is officially supported on Linux ROCm
             return 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
           } else if (gpu === 'nvidia') {
             return 'pip install ${CUDA_WHEELS}';
@@ -101,22 +115,12 @@ module.exports = {
       }
     },
 
-    // 7. Pin numpy for Linux ROCm (numpy 2.x incompatible with these wheels)
+    // 8. Pin numpy for Linux ROCm (numpy 2.x incompatible with these wheels)
     {
       when: "{{platform === 'linux'}}",
       method: "shell.run",
       params: {
         message: "pip install numpy==1.26.4",
-        path: "app",
-        venv: "env"
-      }
-    },
-
-    // 8. Install Qwen3-TTS and remaining deps
-    {
-      method: "shell.run",
-      params: {
-        message: `pip install -e . --no-deps && pip install ${COMMON_DEPS}`,
         path: "app",
         venv: "env"
       }
