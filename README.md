@@ -1,5 +1,5 @@
 # Qwen3-TTS (AMD GPU) — Pinokio App
-> **Windows only. Requires an AMD GPU (RDNA 3/4) or Ryzen AI APU.**
+> **Windows and Linux. Requires an AMD GPU (RDNA 3/4) or Ryzen AI APU.**
 
 One-click installer for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) on AMD GPUs via ROCm on Windows.
 
@@ -17,9 +17,9 @@ One-click installer for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) on AMD 
 
 ## Requirements
 
-- Windows 11
+- Windows 11 or Linux (Ubuntu 22.04 / 24.04)
 - Python 3.12
-- AMD Adrenalin driver 26.2.2 or later (for ROCm support)
+- AMD Adrenalin driver 26.2.2 or later (Windows) / ROCm 7.2.1 (Linux)
 - [Pinokio](https://pinokio.computer)
 
 ## Install

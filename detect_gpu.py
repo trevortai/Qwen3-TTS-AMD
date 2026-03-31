@@ -1,12 +1,17 @@
 """
 GPU detection script for Qwen3-TTS installer.
 Outputs one of: amd_dgpu | amd_apu | nvidia | cpu
+Supports Windows and Linux.
 """
 import subprocess
 import sys
+import platform
 
 
-def get_gpu_names():
+APU_KEYWORDS = ["780m", "800m", "890m", "880m", "radeon 800", "strix", "phoenix", "hawk point", "ryzen ai max"]
+
+
+def get_gpu_names_windows():
     try:
         result = subprocess.run(
             ["powershell", "-command",
@@ -18,11 +23,30 @@ def get_gpu_names():
         return ""
 
 
+def get_gpu_names_linux():
+    try:
+        result = subprocess.run(["lspci"], capture_output=True, text=True, timeout=10)
+        # Filter to VGA / Display / 3D controller lines
+        lines = [l for l in result.stdout.lower().splitlines()
+                 if any(k in l for k in ["vga", "display", "3d controller"])]
+        return " ".join(lines)
+    except Exception:
+        return ""
+
+
 def detect():
-    gpus = get_gpu_names()
+    os_name = platform.system()
+
+    if os_name == "Windows":
+        gpus = get_gpu_names_windows()
+    elif os_name == "Linux":
+        gpus = get_gpu_names_linux()
+    else:
+        print("cpu")
+        return
 
     has_nvidia = "nvidia" in gpus
-    has_amd = "amd" in gpus or "radeon" in gpus
+    has_amd = "amd" in gpus or "radeon" in gpus or "advanced micro devices" in gpus
 
     if not has_amd and not has_nvidia:
         print("cpu")
@@ -33,10 +57,7 @@ def detect():
         return
 
     if has_amd:
-        # Ryzen AI APUs show up as "radeon 800m", "radeon 780m", "radeon 890m"
-        # or "ryzen ai" in the name — discrete cards show "rx 7xxx", "rx 9xxx", "radeon ai pro"
-        apu_keywords = ["780m", "800m", "890m", "880m", "radeon 800", "strix", "phoenix", "hawk point", "ryzen ai max"]
-        is_apu = any(k in gpus for k in apu_keywords)
+        is_apu = any(k in gpus for k in APU_KEYWORDS)
         print("amd_apu" if is_apu else "amd_dgpu")
         return
 
