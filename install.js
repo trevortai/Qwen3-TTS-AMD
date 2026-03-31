@@ -50,7 +50,7 @@ module.exports = {
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
-      params: { message: "copy ..\\launch_amd.py launch_amd.py", path: "app" }
+      params: { message: "copy /Y ..\\launch_amd.py launch_amd.py", path: "app" }
     },
 
     // 3. Copy launch script — Linux
