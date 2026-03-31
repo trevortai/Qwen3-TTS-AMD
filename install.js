@@ -81,20 +81,21 @@ module.exports = {
       params: { path: "app/gpu_type.txt" }
     },
 
-    // 7. Install correct PyTorch wheels LAST — always wins over anything installed above
+    // 7. Uninstall any torch pulled in by common deps, then install correct wheels
     {
       method: "shell.run",
       params: {
         message: `{{
           const gpu = input.data.trim();
+          const pre = 'pip uninstall torch torchaudio torchvision -y && ';
           if (gpu === 'amd_dgpu' || gpu === 'amd_apu') {
             return platform === 'win32'
-              ? 'pip install --no-cache-dir ${ROCM_WHEELS_WIN}'
-              : 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
+              ? pre + 'pip install --no-cache-dir ${ROCM_WHEELS_WIN}'
+              : pre + 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
           } else if (gpu === 'nvidia') {
-            return 'pip install ${CUDA_WHEELS}';
+            return pre + 'pip install ${CUDA_WHEELS}';
           } else {
-            return 'pip install ${CPU_WHEELS}';
+            return pre + 'pip install ${CPU_WHEELS}';
           }
         }}`,
         path: "app",
