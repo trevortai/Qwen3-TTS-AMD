@@ -18,7 +18,7 @@ One-click installer for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) on AMD 
 ## Requirements
 
 - Windows 11 or Linux (Ubuntu 22.04 / 24.04)
-- Python 3.12
+- **Python 3.12** (required — ROCm wheels are not available for other versions)
 - AMD Adrenalin driver 26.2.2 or later (Windows) / ROCm 7.2.1 (Linux)
 - [Pinokio](https://pinokio.computer)
 
