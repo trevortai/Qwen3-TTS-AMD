@@ -54,12 +54,11 @@ module.exports = {
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 4. Install Qwen3-TTS and common deps FIRST
-    //    (may pull in CPU torch/torchaudio — overwritten by ROCm wheels in step 7)
+    // 4. Install common deps only — NOT qwen-tts yet (needs torchaudio present first)
     {
       method: "shell.run",
       params: {
-        message: `pip install -e . --no-deps && pip install ${COMMON_DEPS}`,
+        message: `pip install ${COMMON_DEPS}`,
         path: "app",
         venv: "env"
       }
@@ -113,7 +112,17 @@ module.exports = {
       }
     },
 
-    // 9. Done
+    // 9. Install qwen-tts last — torchaudio is now present, no resolver conflict
+    {
+      method: "shell.run",
+      params: {
+        message: "pip install -e . --no-deps",
+        path: "app",
+        venv: "env"
+      }
+    },
+
+    // 10. Done
     {
       method: "notify",
       params: {
