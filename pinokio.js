@@ -1,6 +1,6 @@
 module.exports = {
   title: "Qwen3-TTS (AMD GPU)",
-  description: "One-click Qwen3-TTS on AMD GPU via ROCm — supports RDNA 3/4 discrete GPUs and Ryzen AI APUs on Windows. Includes auto GPU detection, hipBLASLt optimization, and torch.compile for fast inference.",
+  description: "Qwen3-TTS is an open-source series of TTS models developed by the Qwen team at Alibaba Cloud, with AMD GPU support via ROCm. Windows only.",
 
   menu: [
     { text: "Install", href: "install.js" },

@@ -1,4 +1,5 @@
 # Qwen3-TTS (AMD GPU) — Pinokio App
+> **Windows only. Requires an AMD GPU (RDNA 3/4) or Ryzen AI APU.**
 
 One-click installer for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) on AMD GPUs via ROCm on Windows.
 
