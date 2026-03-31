@@ -34,10 +34,16 @@ module.exports = {
       params: { message: "git clone https://github.com/QwenLM/Qwen3-TTS app" }
     },
 
-    // 2. Create venv (Python 3.12 required)
+    // 2. Verify Python 3.12 is available (required for ROCm wheels)
     {
       method: "shell.run",
-      params: { message: "python -m venv env", path: "app" }
+      params: { message: "py -3.12 --version" }
+    },
+
+    // 3. Create venv with Python 3.12 explicitly
+    {
+      method: "shell.run",
+      params: { message: "py -3.12 -m venv env", path: "app" }
     },
 
     // 3. Copy launch script — Windows
