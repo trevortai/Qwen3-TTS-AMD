@@ -1,6 +1,6 @@
 """
 GPU detection script for Qwen3-TTS installer.
-Outputs one of: amd_dgpu | amd_apu | nvidia | cpu
+Outputs one of: amd_dgpu | amd_rdna2_dgpu | amd_apu | nvidia | cpu
 Supports Windows and Linux.
 """
 import subprocess
@@ -9,6 +9,12 @@ import platform
 
 
 APU_KEYWORDS = ["780m", "800m", "890m", "880m", "radeon 800", "strix", "phoenix", "hawk point", "ryzen ai max"]
+
+# RDNA2 dGPUs (gfx103x) — RX 6xxx series and Radeon Pro W6xxx
+# RDNA3 starts at RX 7xxx, RDNA4 at RX 9xxx — so "rx 6" is a safe RDNA2 indicator
+RDNA2_KEYWORDS = ["rx 6900", "rx 6800", "rx 6700", "rx 6650", "rx 6600",
+                  "rx 6500", "rx 6400", "rx 6300", "radeon pro w6",
+                  "navi 21", "navi 22", "navi 23", "navi 24"]
 
 
 def get_gpu_names_windows():
@@ -57,8 +63,12 @@ def detect():
         return
 
     if has_amd:
-        is_apu = any(k in gpus for k in APU_KEYWORDS)
-        print("amd_apu" if is_apu else "amd_dgpu")
+        if any(k in gpus for k in APU_KEYWORDS):
+            print("amd_apu")
+        elif any(k in gpus for k in RDNA2_KEYWORDS):
+            print("amd_rdna2_dgpu")
+        else:
+            print("amd_dgpu")
         return
 
     print("cpu")

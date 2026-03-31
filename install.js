@@ -66,7 +66,18 @@ module.exports = {
       params: { path: "app/gpu_type.txt" }
     },
 
-    // 6. Install correct PyTorch wheels based on GPU + platform
+    // 6a. Block RDNA2 on Windows — not supported, fail early with clear message
+    {
+      when: "{{input.data.trim() === 'amd_rdna2_dgpu' && platform === 'win32'}}",
+      method: "shell.run",
+      params: {
+        message: "python -c \"import sys; print('\\nERROR: RDNA2 (RX 6000 series) is not supported on Windows.'); print('ROCm Windows does not yet include stable gfx103x support.'); print('Please use Linux for RDNA2 GPU acceleration.\\n'); sys.exit(1)\"",
+        path: "app",
+        venv: "env"
+      }
+    },
+
+    // 6b. Install correct PyTorch wheels based on GPU + platform
     {
       method: "shell.run",
       params: {
@@ -76,6 +87,9 @@ module.exports = {
             return platform === 'win32'
               ? 'pip install --no-cache-dir ${ROCM_WHEELS_WIN}'
               : 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
+          } else if (gpu === 'amd_rdna2_dgpu') {
+            // Linux only — same manylinux wheels, gfx103x is officially supported on Linux ROCm
+            return 'pip install --no-cache-dir ${ROCM_WHEELS_LINUX}';
           } else if (gpu === 'nvidia') {
             return 'pip install ${CUDA_WHEELS}';
           } else {
