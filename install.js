@@ -103,9 +103,8 @@ module.exports = {
       }
     },
 
-    // 8. Pin numpy for Linux ROCm (numpy 2.x incompatible with these wheels)
+    // 8. Pin numpy — 2.x is incompatible with ROCm torch wheels on both platforms
     {
-      when: "{{platform === 'linux'}}",
       method: "shell.run",
       params: {
         message: "pip install numpy==1.26.4",
