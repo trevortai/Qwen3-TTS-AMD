@@ -70,34 +70,17 @@ def main():
 
     print(f"\nDetected GPU type: {gpu} | Platform: {os_name}\n")
 
-    if gpu == "amd_dgpu" and os_name == "Windows":
-        # Radeon dGPU — follows AMD's official Radeon install guide:
-        # https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/install-pytorch.html
-        print("Installing ROCm SDK (dGPU)...")
+    if gpu in ("amd_dgpu", "amd_apu") and os_name == "Windows":
+        # AMD Windows — same process for both dGPU and APU per AMD docs
+        # rocm-7.2.1.tar.gz provides the rocm Python package (rocm_sdk module) torch needs
+        print(f"Installing ROCm SDK ({gpu})...")
         pip("install", "--no-cache-dir",
             f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
             f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
             f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl",
             f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
 
-        print("\nInstalling ROCm PyTorch wheels (dGPU)...")
-        pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
-            f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl")
-
-    elif gpu == "amd_apu" and os_name == "Windows":
-        # Ryzen APU — follows AMD's official Ryzen install guide exactly:
-        # https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/windows/install-pytorch.html
-        # rocm-7.2.1.tar.gz provides the rocm Python package (rocm_sdk module) that torch needs
-        print("Installing ROCm SDK + rocm package (APU)...")
-        pip("install", "--no-cache-dir",
-            f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
-
-        print("\nInstalling ROCm PyTorch wheels (APU)...")
+        print(f"\nInstalling ROCm PyTorch wheels ({gpu})...")
         pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
             f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
             f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
