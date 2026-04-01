@@ -104,7 +104,13 @@ module.exports = {
       }
     },
 
-    // 7b. Install correct PyTorch wheels — force-reinstall overwrites any version pulled in above
+    // 7b. Re-read GPU type — step 7a changed input, need fresh value for wheel selection
+    {
+      method: "fs.read",
+      params: { path: "app/gpu_type.txt" }
+    },
+
+    // 7c. Install correct PyTorch wheels — force-reinstall overwrites any version pulled in above
     {
       method: "shell.run",
       params: {
