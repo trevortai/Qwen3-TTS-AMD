@@ -1,20 +1,18 @@
 """
-Detects GPU and installs the correct PyTorch + ROCm wheels.
-Runs inside the venv — called by install.js as a single step.
+Detects GPU and installs the correct PyTorch wheels.
+
+dGPU (RDNA 3/4):    Standard ROCm 7.2.1 wheels — no SDK needed
+APU (Strix Halo):   Nightly gfx1151 index — self-contained, no SDK needed
+NVIDIA:             CUDA 12.4 wheels
+CPU:                CPU-only wheels
 """
+import os
 import subprocess
 import sys
 import platform
 
-
 ROCM_BASE_WIN   = "https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1"
 ROCM_BASE_LINUX = "https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1"
-
-ROCM_SDK_WIN = [
-    f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
-    f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
-    f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl",
-]
 
 ROCM_WHEELS_WIN = [
     f"{ROCM_BASE_WIN}/torch-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl",
@@ -29,13 +27,13 @@ ROCM_WHEELS_LINUX = [
     f"{ROCM_BASE_LINUX}/triton-3.5.1+rocm7.2.1.gita272dfa8-cp312-cp312-linux_x86_64.whl",
 ]
 
-APU_KEYWORDS  = ["780m", "800m", "890m", "880m", "radeon 800", "strix", "phoenix", "hawk point", "ryzen ai max"]
+APU_KEYWORDS = ["780m", "800m", "890m", "880m", "radeon 800", "strix", "phoenix", "hawk point", "ryzen ai max"]
 
 
 def pip(*args):
     result = subprocess.run([sys.executable, "-m", "pip"] + list(args))
     if result.returncode != 0:
-        print(f"pip {' '.join(args[:2])} failed with exit code {result.returncode}")
+        print(f"\npip {' '.join(args[:3])} failed with exit code {result.returncode}")
         sys.exit(result.returncode)
 
 
@@ -73,37 +71,26 @@ def main():
     os_name = platform.system()
     gpu = detect_gpu()
 
-    # Write gpu_type.txt for start.js to read
     with open("gpu_type.txt", "w") as f:
         f.write(gpu)
 
     print(f"\nDetected GPU type: {gpu} | Platform: {os_name}\n")
 
-    if gpu in ("amd_dgpu", "amd_apu") and os_name == "Windows":
-        # Step 1: Install ROCm SDK
-        print("Installing ROCm SDK...")
-        pip("install", "--no-cache-dir", *ROCM_SDK_WIN)
+    if gpu == "amd_dgpu" and os_name == "Windows":
+        # Standard ROCm 7.2.1 wheels — confirmed working on RDNA 3/4 dGPU
+        print("Installing ROCm PyTorch wheels (dGPU)...")
+        pip("install", "--no-cache-dir", "--force-reinstall", *ROCM_WHEELS_WIN)
 
-        # Step 2: Create rocm_sdk shim — torch._rocm_init does `import rocm_sdk`
-        # but the SDK installs as `rocm_sdk_core`. This shim bridges the name mismatch.
-        import sysconfig
-        site_packages = sysconfig.get_paths()["purelib"]
-        shim_path = os.path.join(site_packages, "rocm_sdk.py")
-        with open(shim_path, "w") as f:
-            f.write("# Shim: torch expects rocm_sdk but SDK installs as rocm_sdk_core\n")
-            f.write("from rocm_sdk_core import *\n")
-        print(f"Created rocm_sdk shim at {shim_path}")
-
-        # Step 3: Install PyTorch wheels with --no-deps to skip rocm[libraries]==7.2.1
-        print("\nInstalling ROCm PyTorch wheels (--no-deps)...")
-        pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
-            *ROCM_WHEELS_WIN)
+    elif gpu == "amd_apu" and os_name == "Windows":
+        # Strix Halo / Ryzen APU — use nightly gfx1151 index (self-contained, no SDK needed)
+        print("Installing ROCm PyTorch wheels (APU / Strix Halo — nightly gfx1151)...")
+        pip("install", "--pre", "--force-reinstall",
+            "--index-url", "https://rocm.nightlies.amd.com/v2/gfx1151/",
+            "torch", "torchaudio", "torchvision")
 
     elif gpu in ("amd_dgpu", "amd_apu") and os_name == "Linux":
         print("Installing ROCm PyTorch wheels (Linux)...")
         pip("install", "--no-cache-dir", "--force-reinstall", *ROCM_WHEELS_LINUX)
-
-        print("\nPinning numpy for Linux ROCm compatibility...")
         pip("install", "numpy==1.26.4")
 
     elif gpu == "nvidia":
@@ -118,11 +105,7 @@ def main():
             "--index-url", "https://download.pytorch.org/whl/cpu",
             "torch", "torchaudio", "torchvision")
 
-    print("\nPinning numpy (2.x incompatible with ROCm wheels)...")
     pip("install", "numpy==1.26.4")
-
-    print("\nWheel installation complete.")
-
     print("\nWheel installation complete.")
 
 
