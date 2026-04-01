@@ -113,14 +113,16 @@ def main():
     print("\nPinning numpy (2.x incompatible with ROCm wheels)...")
     pip("install", "numpy==1.26.4")
 
-    # Verify torchaudio installed
-    try:
-        import importlib
-        importlib.import_module("torchaudio")
-        print("\ntorchaudio verified OK")
-    except ImportError:
-        print("\nERROR: torchaudio failed to install!")
+    # Verify torchaudio installed — use subprocess for fresh Python process
+    # (ROCm DLLs only load correctly in a new process after SDK installation)
+    result = subprocess.run(
+        [sys.executable, "-c", "import torchaudio; print('torchaudio OK')"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(f"\nERROR: torchaudio failed to import: {result.stderr}")
         sys.exit(1)
+    print(f"\n{result.stdout.strip()}")
 
     print("\nWheel installation complete.")
 
