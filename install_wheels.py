@@ -1,12 +1,11 @@
 """
 Detects GPU and installs the correct PyTorch wheels.
 
-dGPU (RDNA 3/4):    Standard ROCm 7.2.1 wheels — no SDK needed
-APU (Strix Halo):   Nightly gfx1151 index — self-contained, no SDK needed
+dGPU (RDNA 3/4):    ROCm 7.2.1 — SDK wheels then torch wheels (AMD installrad docs)
+APU (Strix Halo):   ROCm 7.2.1 — SDK + rocm-7.2.1.tar.gz then torch wheels (AMD installryz docs)
 NVIDIA:             CUDA 12.4 wheels
 CPU:                CPU-only wheels
 """
-import os
 import subprocess
 import sys
 import platform
@@ -14,11 +13,6 @@ import platform
 ROCM_BASE_WIN   = "https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1"
 ROCM_BASE_LINUX = "https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1"
 
-ROCM_WHEELS_WIN = [
-    f"{ROCM_BASE_WIN}/torch-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl",
-    f"{ROCM_BASE_WIN}/torchaudio-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl",
-    f"{ROCM_BASE_WIN}/torchvision-0.24.1+rocm7.2.1-cp312-cp312-win_amd64.whl",
-]
 
 ROCM_WHEELS_LINUX = [
     f"{ROCM_BASE_LINUX}/torch-2.9.1+rocm7.2.1.lw.gitff65f5bc-cp312-cp312-linux_x86_64.whl",
@@ -77,16 +71,36 @@ def main():
     print(f"\nDetected GPU type: {gpu} | Platform: {os_name}\n")
 
     if gpu == "amd_dgpu" and os_name == "Windows":
-        # Standard ROCm 7.2.1 wheels — confirmed working on RDNA 3/4 dGPU
-        print("Installing ROCm PyTorch wheels (dGPU)...")
-        pip("install", "--no-cache-dir", "--force-reinstall", *ROCM_WHEELS_WIN)
+        # Radeon dGPU — follows AMD's official Radeon install guide:
+        # https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/install-pytorch.html
+        print("Installing ROCm SDK (dGPU)...")
+        pip("install", "--no-cache-dir",
+            f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl")
+
+        print("\nInstalling ROCm PyTorch wheels (dGPU)...")
+        pip("install", "--no-cache-dir", "--force-reinstall",
+            f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl")
 
     elif gpu == "amd_apu" and os_name == "Windows":
-        # Strix Halo / Ryzen APU — use nightly gfx1151 index (self-contained, no SDK needed)
-        print("Installing ROCm PyTorch wheels (APU / Strix Halo — nightly gfx1151)...")
-        pip("install", "--pre", "--force-reinstall",
-            "--index-url", "https://rocm.nightlies.amd.com/v2/gfx1151/",
-            "torch", "torchaudio", "torchvision")
+        # Ryzen APU — follows AMD's official Ryzen install guide exactly:
+        # https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/windows/install-pytorch.html
+        # rocm-7.2.1.tar.gz provides the rocm Python package (rocm_sdk module) that torch needs
+        print("Installing ROCm SDK + rocm package (APU)...")
+        pip("install", "--no-cache-dir",
+            f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
+
+        print("\nInstalling ROCm PyTorch wheels (APU)...")
+        pip("install", "--no-cache-dir", "--force-reinstall",
+            f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl")
 
     elif gpu in ("amd_dgpu", "amd_apu") and os_name == "Linux":
         print("Installing ROCm PyTorch wheels (Linux)...")
