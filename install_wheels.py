@@ -80,10 +80,10 @@ def main():
     print(f"\nDetected GPU type: {gpu} | Platform: {os_name}\n")
 
     if gpu in ("amd_dgpu", "amd_apu") and os_name == "Windows":
-        # Install SDK + PyTorch wheels in ONE command so pip resolves
-        # rocm[libraries]==7.2.1 from the provided wheels instead of PyPI
-        print("Installing ROCm SDK + PyTorch wheels (single command)...")
+        # Use AMD's repo as extra index so pip can resolve rocm[libraries]==7.2.1
+        print("Installing ROCm SDK + PyTorch wheels...")
         pip("install", "--no-cache-dir", "--force-reinstall",
+            "--extra-index-url", f"{ROCM_BASE_WIN}/",
             *ROCM_SDK_WIN, *ROCM_WHEELS_WIN)
 
     elif gpu in ("amd_dgpu", "amd_apu") and os_name == "Linux":
