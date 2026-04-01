@@ -81,7 +81,7 @@ def main():
             f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
 
         print("\nInstalling ROCm PyTorch wheels (dGPU)...")
-        pip("install", "--no-cache-dir", "--force-reinstall",
+        pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
             f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
             f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
             f"{ROCM_BASE_WIN}/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl")
@@ -98,7 +98,7 @@ def main():
             f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
 
         print("\nInstalling ROCm PyTorch wheels (APU)...")
-        pip("install", "--no-cache-dir", "--force-reinstall",
+        pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
             f"{ROCM_BASE_WIN}/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
             f"{ROCM_BASE_WIN}/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl",
             f"{ROCM_BASE_WIN}/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl")
