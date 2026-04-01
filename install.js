@@ -1,36 +1,3 @@
-// Wheel sources — all from AMD's official repo.radeon.com
-// Windows: https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/
-// Linux:   https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/
-//
-// ROCm wheels are installed LAST to prevent pip's dependency resolver
-// from overwriting them with CPU versions when installing other packages.
-// See: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/install-pytorch.html
-
-const ROCM_BASE_WIN   = "https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1"
-const ROCM_BASE_LINUX = "https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1"
-
-// ROCm SDK must be installed before PyTorch wheels — required for platform compatibility
-const ROCM_SDK_WIN = [
-  `${ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl`,
-  `${ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl`,
-  `${ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl`,
-].join(" ")
-
-const ROCM_WHEELS_WIN = [
-  `${ROCM_BASE_WIN}/torch-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl`,
-  `${ROCM_BASE_WIN}/torchaudio-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl`,
-  `${ROCM_BASE_WIN}/torchvision-0.24.1+rocm7.2.1-cp312-cp312-win_amd64.whl`,
-].join(" ")
-
-const ROCM_WHEELS_LINUX = [
-  `${ROCM_BASE_LINUX}/torch-2.9.1+rocm7.2.1.lw.gitff65f5bc-cp312-cp312-linux_x86_64.whl`,
-  `${ROCM_BASE_LINUX}/torchaudio-2.9.0+rocm7.2.1.gite3c6ee2b-cp312-cp312-linux_x86_64.whl`,
-  `${ROCM_BASE_LINUX}/torchvision-0.24.0+rocm7.2.1.gitb919bd0c-cp312-cp312-linux_x86_64.whl`,
-  `${ROCM_BASE_LINUX}/triton-3.5.1+rocm7.2.1.gita272dfa8-cp312-cp312-linux_x86_64.whl`,
-].join(" ")
-
-const CUDA_WHEELS = "--index-url https://download.pytorch.org/whl/cu124 torch torchaudio torchvision"
-const CPU_WHEELS  = "--index-url https://download.pytorch.org/whl/cpu torch torchaudio torchvision"
 const COMMON_DEPS = "transformers==4.57.3 accelerate==1.12.0 gradio librosa soundfile einops onnxruntime sox"
 
 module.exports = {
@@ -53,21 +20,21 @@ module.exports = {
       params: { message: "py -3.12 -m venv env", path: "app" }
     },
 
-    // 3. Copy launch script — Windows
+    // 4. Copy launch script — Windows
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
       params: { message: "copy /Y ..\\launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 3. Copy launch script — Linux
+    // 4. Copy launch script — Linux
     {
       when: "{{platform === 'linux'}}",
       method: "shell.run",
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 4. Install common deps only — NOT qwen-tts yet (needs torchaudio present first)
+    // 5. Install common deps
     {
       method: "shell.run",
       params: {
@@ -77,71 +44,18 @@ module.exports = {
       }
     },
 
-    // 5. Detect GPU and write result to gpu_type.txt
+    // 6. Detect GPU and install correct wheels — all handled in one Python script
+    //    (avoids Pinokio input-chaining issues with multi-step conditionals)
     {
       method: "shell.run",
       params: {
-        message: "python ../detect_gpu.py > gpu_type.txt",
+        message: "python ../install_wheels.py",
         path: "app",
         venv: "env"
       }
     },
 
-    // 6. Read GPU type
-    {
-      method: "fs.read",
-      params: { path: "app/gpu_type.txt" }
-    },
-
-    // 7a. Install ROCm SDK first (Windows AMD only) — required before PyTorch wheels
-    {
-      when: "{{(input.data.trim() === 'amd_dgpu' || input.data.trim() === 'amd_apu') && platform === 'win32'}}",
-      method: "shell.run",
-      params: {
-        message: `pip install --no-cache-dir ${ROCM_SDK_WIN}`,
-        path: "app",
-        venv: "env"
-      }
-    },
-
-    // 7b. Re-read GPU type — step 7a changed input, need fresh value for wheel selection
-    {
-      method: "fs.read",
-      params: { path: "app/gpu_type.txt" }
-    },
-
-    // 7c. Install correct PyTorch wheels — force-reinstall overwrites any version pulled in above
-    {
-      method: "shell.run",
-      params: {
-        message: `{{
-          const gpu = input.data.trim();
-          if (gpu === 'amd_dgpu' || gpu === 'amd_apu') {
-            return platform === 'win32'
-              ? 'pip install --no-cache-dir --force-reinstall ${ROCM_WHEELS_WIN}'
-              : 'pip install --no-cache-dir --force-reinstall ${ROCM_WHEELS_LINUX}';
-          } else if (gpu === 'nvidia') {
-            return 'pip install --force-reinstall ${CUDA_WHEELS}';
-          } else {
-            return 'pip install --force-reinstall ${CPU_WHEELS}';
-          }
-        }}`,
-        path: "app",
-        venv: "env"
-      }
-    },
-
-    // 8. Pin numpy — 2.x is incompatible with ROCm torch wheels on both platforms
-    {
-      method: "shell.run",
-      params: {
-        message: "pip install numpy==1.26.4",
-        path: "app",
-        venv: "env"
-      }
-    },
-
-    // 9. Install qwen-tts last — torchaudio is now present, no resolver conflict
+    // 7. Install qwen-tts last — torchaudio is now present, no resolver conflict
     {
       method: "shell.run",
       params: {
@@ -151,7 +65,7 @@ module.exports = {
       }
     },
 
-    // 10. Done
+    // 8. Done
     {
       method: "notify",
       params: {
