@@ -84,9 +84,17 @@ def main():
         print("Installing ROCm SDK...")
         pip("install", "--no-cache-dir", *ROCM_SDK_WIN)
 
-        # Step 2: Install PyTorch wheels with --no-deps to skip rocm[libraries]==7.2.1
-        # dependency resolution — the SDK is already installed under a different package
-        # name (rocm-sdk-libraries-custom) so pip can't match it by name, but it works at runtime
+        # Step 2: Create rocm_sdk shim — torch._rocm_init does `import rocm_sdk`
+        # but the SDK installs as `rocm_sdk_core`. This shim bridges the name mismatch.
+        import sysconfig
+        site_packages = sysconfig.get_paths()["purelib"]
+        shim_path = os.path.join(site_packages, "rocm_sdk.py")
+        with open(shim_path, "w") as f:
+            f.write("# Shim: torch expects rocm_sdk but SDK installs as rocm_sdk_core\n")
+            f.write("from rocm_sdk_core import *\n")
+        print(f"Created rocm_sdk shim at {shim_path}")
+
+        # Step 3: Install PyTorch wheels with --no-deps to skip rocm[libraries]==7.2.1
         print("\nInstalling ROCm PyTorch wheels (--no-deps)...")
         pip("install", "--no-cache-dir", "--no-deps", "--force-reinstall",
             *ROCM_WHEELS_WIN)
