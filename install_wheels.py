@@ -77,7 +77,8 @@ def main():
         pip("install", "--no-cache-dir",
             f"{ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl",
             f"{ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl",
-            f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl")
+            f"{ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl",
+            f"{ROCM_BASE_WIN}/rocm-7.2.1.tar.gz")
 
         print("\nInstalling ROCm PyTorch wheels (dGPU)...")
         pip("install", "--no-cache-dir", "--force-reinstall",
