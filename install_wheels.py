@@ -1,8 +1,8 @@
 """
 Detects GPU and installs the correct PyTorch wheels.
 
-dGPU (RDNA 3/4):    ROCm 7.2.1 — SDK wheels then torch wheels (AMD installrad docs)
-APU (Strix Halo):   ROCm 7.2.1 — SDK + rocm-7.2.1.tar.gz then torch wheels (AMD installryz docs)
+dGPU (RDNA 3/4):    ROCm 7.2.1 — SDK + rocm-7.2.1.tar.gz + torch wheels (AMD installrad docs)
+APU (Strix Halo):   ROCm 7.2.1 — SDK + rocm-7.2.1.tar.gz + torch wheels (AMD installryz docs)
 NVIDIA:             CUDA 12.4 wheels
 CPU:                CPU-only wheels
 """
