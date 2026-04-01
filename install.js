@@ -9,6 +9,13 @@
 const ROCM_BASE_WIN   = "https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1"
 const ROCM_BASE_LINUX = "https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1"
 
+// ROCm SDK must be installed before PyTorch wheels — required for platform compatibility
+const ROCM_SDK_WIN = [
+  `${ROCM_BASE_WIN}/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl`,
+  `${ROCM_BASE_WIN}/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl`,
+  `${ROCM_BASE_WIN}/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl`,
+].join(" ")
+
 const ROCM_WHEELS_WIN = [
   `${ROCM_BASE_WIN}/torch-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl`,
   `${ROCM_BASE_WIN}/torchaudio-2.9.1+rocm7.2.1-cp312-cp312-win_amd64.whl`,
@@ -86,7 +93,18 @@ module.exports = {
       params: { path: "app/gpu_type.txt" }
     },
 
-    // 7. Install correct PyTorch wheels — force-reinstall overwrites any version pulled in above
+    // 7a. Install ROCm SDK first (Windows AMD only) — required before PyTorch wheels
+    {
+      when: "{{(input.data.trim() === 'amd_dgpu' || input.data.trim() === 'amd_apu') && platform === 'win32'}}",
+      method: "shell.run",
+      params: {
+        message: `pip install --no-cache-dir ${ROCM_SDK_WIN}`,
+        path: "app",
+        venv: "env"
+      }
+    },
+
+    // 7b. Install correct PyTorch wheels — force-reinstall overwrites any version pulled in above
     {
       method: "shell.run",
       params: {
