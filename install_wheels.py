@@ -68,7 +68,13 @@ def main():
     with open("gpu_type.txt", "w") as f:
         f.write(gpu)
 
-    print(f"\nDetected GPU type: {gpu} | Platform: {os_name}\n")
+    py_ver = platform.python_version()
+    print(f"\nDetected GPU type: {gpu} | Platform: {os_name} | Python: {py_ver}\n")
+
+    if sys.version_info < (3, 12):
+        print(f"ERROR: Python 3.12 is required for ROCm wheels. Currently using Python {py_ver}.")
+        print("Please ensure Python 3.12 is installed and try again.")
+        sys.exit(1)
 
     if gpu in ("amd_dgpu", "amd_apu") and os_name == "Windows":
         # AMD Windows — same process for both dGPU and APU per AMD docs
