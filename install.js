@@ -32,10 +32,14 @@ module.exports = {
     },
 
     // 4. Create venv with Python 3.12
+    //    Runs in a fresh PowerShell so it picks up the updated PATH from winget
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
-      params: { message: "py -3.12 -m venv env", path: "app" }
+      params: {
+        message: "powershell -command \"py -3.12 -m venv env\"",
+        path: "app"
+      }
     },
 
     // 4. Create venv — Linux (Python 3.12 assumed available)
