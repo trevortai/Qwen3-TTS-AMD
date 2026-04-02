@@ -22,12 +22,13 @@ module.exports = {
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 3. Verify Python 3.12 is installed — ROCm wheels require it
-    //    If this step fails, install Python 3.12 from https://www.python.org/downloads/
+    // 3. Ensure Python 3.12 is installed via winget (safe to run if already installed)
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
-      params: { message: "py -3.12 --version" }
+      params: {
+        message: "winget install --id Python.Python.3.12 -e --source winget --accept-source-agreements --accept-package-agreements"
+      }
     },
 
     // 4. Create venv with Python 3.12
