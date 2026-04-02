@@ -2,10 +2,16 @@ const COMMON_DEPS = "transformers==4.57.3 accelerate==1.12.0 gradio librosa soun
 
 module.exports = {
   run: [
-    // 1. Clone Qwen3-TTS
+    // 1. Clone Qwen3-TTS (remove app/ first if it exists from a previous attempt)
     {
+      when: "{{platform === 'win32'}}",
       method: "shell.run",
-      params: { message: "git clone https://github.com/QwenLM/Qwen3-TTS app" }
+      params: { message: "if exist app (rmdir /s /q app) & git clone https://github.com/QwenLM/Qwen3-TTS app" }
+    },
+    {
+      when: "{{platform === 'linux'}}",
+      method: "shell.run",
+      params: { message: "rm -rf app && git clone https://github.com/QwenLM/Qwen3-TTS app" }
     },
 
     // 2. Copy launch script — Windows
