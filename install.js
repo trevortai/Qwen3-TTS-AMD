@@ -22,20 +22,39 @@ module.exports = {
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 3. Install common deps
-    //    venv_python: "3.12" tells Pinokio to create the venv with Python 3.12
-    //    Pinokio manages Python versions automatically — no manual install needed
+    // 3. Verify Python 3.12 is installed — ROCm wheels require it
+    //    If this step fails, install Python 3.12 from https://www.python.org/downloads/
+    {
+      when: "{{platform === 'win32'}}",
+      method: "shell.run",
+      params: { message: "py -3.12 --version" }
+    },
+
+    // 4. Create venv with Python 3.12
+    {
+      when: "{{platform === 'win32'}}",
+      method: "shell.run",
+      params: { message: "py -3.12 -m venv env", path: "app" }
+    },
+
+    // 4. Create venv — Linux (Python 3.12 assumed available)
+    {
+      when: "{{platform === 'linux'}}",
+      method: "shell.run",
+      params: { message: "python3.12 -m venv env", path: "app" }
+    },
+
+    // 5. Install common deps
     {
       method: "shell.run",
       params: {
         message: `pip install ${COMMON_DEPS}`,
         path: "app",
-        venv: "env",
-        venv_python: "3.12"
+        venv: "env"
       }
     },
 
-    // 4. Detect GPU and install correct wheels
+    // 6. Detect GPU and install correct wheels
     {
       method: "shell.run",
       params: {
@@ -45,7 +64,7 @@ module.exports = {
       }
     },
 
-    // 5. Install qwen-tts last — torchaudio is now present, no resolver conflict
+    // 7. Install qwen-tts last — torchaudio is now present, no resolver conflict
     {
       method: "shell.run",
       params: {
@@ -55,7 +74,7 @@ module.exports = {
       }
     },
 
-    // 6. Done
+    // 8. Done
     {
       method: "notify",
       params: {
