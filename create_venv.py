@@ -50,7 +50,13 @@ def main():
     venv_path = os.path.join(os.getcwd(), "env")
     print(f"Creating venv at: {venv_path}")
 
-    result = subprocess.run([python312, "-m", "venv", venv_path])
+    # Use the py launcher (Microsoft-signed, trusted by app control policies)
+    # rather than calling the Python 3.12 executable directly
+    result = subprocess.run(["py", "-3.12", "-m", "venv", venv_path])
+    if result.returncode != 0:
+        # Fallback: try calling the executable directly
+        print("py launcher failed, trying direct path...")
+        result = subprocess.run([python312, "-m", "venv", venv_path])
     if result.returncode != 0:
         print("ERROR: Failed to create venv.")
         sys.exit(1)
