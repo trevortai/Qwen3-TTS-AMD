@@ -43,13 +43,13 @@ module.exports = {
       }
     },
 
-    // 4. Create venv with Python 3.12 — searches common install paths directly
-    //    (bypasses conda/py launcher which may not see newly installed Python)
+    // 4. Create venv with Python 3.12 using registry lookup
+    //    Reads Windows Registry directly — works even before PATH refreshes
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
       params: {
-        message: "powershell -command \"$py = @($env:LOCALAPPDATA+'\\Programs\\Python\\Python312\\python.exe','C:\\Program Files\\Python312\\python.exe','C:\\Python312\\python.exe') | Where-Object { Test-Path $_ } | Select-Object -First 1; if (-not $py) { Write-Error 'Python 3.12 not found. Please restart and try again.'; exit 1 }; Write-Host ('Using: ' + $py); & $py -m venv env\"",
+        message: "python ../create_venv.py",
         path: "app"
       }
     },
