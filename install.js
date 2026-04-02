@@ -8,44 +8,34 @@ module.exports = {
       params: { message: "git clone https://github.com/QwenLM/Qwen3-TTS app" }
     },
 
-    // 2. Verify Python 3.12 is available (required for ROCm wheels)
-    {
-      method: "shell.run",
-      params: { message: "py -3.12 --version" }
-    },
-
-    // 3. Create venv with Python 3.12 explicitly
-    {
-      method: "shell.run",
-      params: { message: "py -3.12 -m venv env", path: "app" }
-    },
-
-    // 4. Copy launch script — Windows
+    // 2. Copy launch script — Windows
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
       params: { message: "copy /Y ..\\launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 4. Copy launch script — Linux
+    // 2. Copy launch script — Linux
     {
       when: "{{platform === 'linux'}}",
       method: "shell.run",
       params: { message: "cp ../launch_amd.py launch_amd.py", path: "app" }
     },
 
-    // 5. Install common deps
+    // 3. Install common deps
+    //    venv_python: "3.12" tells Pinokio to create the venv with Python 3.12
+    //    Pinokio manages Python versions automatically — no manual install needed
     {
       method: "shell.run",
       params: {
         message: `pip install ${COMMON_DEPS}`,
         path: "app",
-        venv: "env"
+        venv: "env",
+        venv_python: "3.12"
       }
     },
 
-    // 6. Detect GPU and install correct wheels — all handled in one Python script
-    //    (avoids Pinokio input-chaining issues with multi-step conditionals)
+    // 4. Detect GPU and install correct wheels
     {
       method: "shell.run",
       params: {
@@ -55,7 +45,7 @@ module.exports = {
       }
     },
 
-    // 7. Install qwen-tts last — torchaudio is now present, no resolver conflict
+    // 5. Install qwen-tts last — torchaudio is now present, no resolver conflict
     {
       method: "shell.run",
       params: {
@@ -65,7 +55,7 @@ module.exports = {
       }
     },
 
-    // 8. Done
+    // 6. Done
     {
       method: "notify",
       params: {
