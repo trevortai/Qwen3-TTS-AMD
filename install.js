@@ -43,13 +43,13 @@ module.exports = {
       }
     },
 
-    // 4. Create venv with Python 3.12
-    //    Runs in a fresh PowerShell so it picks up the updated PATH from winget
+    // 4. Create venv with Python 3.12 — searches common install paths directly
+    //    (bypasses conda/py launcher which may not see newly installed Python)
     {
       when: "{{platform === 'win32'}}",
       method: "shell.run",
       params: {
-        message: "powershell -command \"py -3.12 -m venv env\"",
+        message: "powershell -command \"$py = @($env:LOCALAPPDATA+'\\Programs\\Python\\Python312\\python.exe','C:\\Program Files\\Python312\\python.exe','C:\\Python312\\python.exe') | Where-Object { Test-Path $_ } | Select-Object -First 1; if (-not $py) { Write-Error 'Python 3.12 not found. Please restart and try again.'; exit 1 }; Write-Host ('Using: ' + $py); & $py -m venv env\"",
         path: "app"
       }
     },
