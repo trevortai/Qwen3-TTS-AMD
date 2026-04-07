@@ -8,6 +8,7 @@ Optimized Gradio launch script for Qwen3-TTS on AMD GPU (ROCm)
 import os
 import sys
 import time
+import socket
 import threading
 
 # HIP/MIOpen env vars are set by start.js before this script runs.
@@ -18,7 +19,22 @@ from qwen_tts import Qwen3TTSModel
 from qwen_tts.cli.demo import build_demo
 
 MODEL = "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
-PORT = 8000
+BASE_PORT = int(os.environ.get("PORT", 8000))
+
+
+def find_free_port(start: int, attempts: int = 10) -> int:
+    for port in range(start, start + attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(("", port))
+                return port
+            except OSError:
+                continue
+    raise RuntimeError(f"No free port found in range {start}–{start + attempts - 1}")
+
+
+PORT = find_free_port(BASE_PORT)
 KEEPALIVE_INTERVAL = int(os.environ.get("GPU_KEEPALIVE_INTERVAL", 15))
 
 # Determine device
